@@ -6,6 +6,8 @@ import { fileURLToPath } from "url";
 import cors from "cors";
 import connectDB from "./db.js";
 import usersRouter from "./routes/users.js";
+import keysRouter from "./routes/keys.js";
+import { requireApiKeyForUsers } from "./middleware/requireApiKey.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,8 +18,17 @@ const PORT = Number(process.env.PORT) || 3000;
 
 app.set("trust proxy", 1);
 
-app.use(cors());
+app.use(
+    cors({
+        origin: true,
+        allowedHeaders: ["Content-Type", "Authorization", "x-api-key"],
+        methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    })
+);
 app.use(express.json({ limit: "1mb" }));
+
+app.use("/api/keys", keysRouter);
+app.use("/api/users", requireApiKeyForUsers);
 app.use("/api/users", usersRouter);
 
 app.get("/", (req, res) => {
@@ -29,6 +40,11 @@ app.use(
         index: false,
     })
 );
+
+app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(500).json({ error: err.message || "Server error" });
+});
 
 async function start() {
     await connectDB();
