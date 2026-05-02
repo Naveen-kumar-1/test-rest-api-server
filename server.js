@@ -20,7 +20,15 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 app.use("/api/users", usersRouter);
-app.use(express.static(rootDir));
+// Must be before express.static, or static will send index.html for GET /
+app.get("/", (req, res) => {
+  res.send("Hello World");
+});
+app.use(
+  express.static(rootDir, {
+    index: false,
+  })
+);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
